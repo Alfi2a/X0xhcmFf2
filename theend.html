@@ -54,6 +54,7 @@
 <script>
 (() => {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const compact = matchMedia("(max-width: 700px), (pointer: coarse)").matches;
     const SPEED = 58;                       // credits speed (px per second)
     const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
     const ease = v => v * v * (3 - 2 * v);
@@ -148,10 +149,10 @@
     requestAnimationFrame(frame);
 
     /* ---------- lights ---------- */
-    const cv = document.getElementById("fx"), g = cv.getContext("2d");
+    const cv = document.getElementById("fx"), g = cv.getContext("2d", { alpha: true });
     let W, H;
     function resize() {
-        const dpr = Math.min(2, devicePixelRatio || 1);
+        const dpr = Math.min(compact ? 1.25 : 1.75, devicePixelRatio || 1);
         W = innerWidth; H = innerHeight;
         cv.width = W * dpr; cv.height = H * dpr;
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -172,9 +173,9 @@
     }));
 
     const LAYERS = [
-        { n: 12, r: [50, 115], a: [0.04, 0.09], par: 0.15, k: "disc", sz: 2, sp: 7 },
-        { n: 26, r: [8, 24],   a: [0.12, 0.24], par: 0.45, k: "glow", sz: 4, sp: 12 },
-        { n: 48, r: [1.2, 3.6], a: [0.35, 0.75], par: 1,    k: "glow", sz: 7, sp: 18, tw: 1 }
+        { n: compact ? 6 : 12, r: [50, 115], a: [0.04, 0.09], par: 0.15, k: "disc", sz: 2, sp: 7 },
+        { n: compact ? 13 : 26, r: [8, 24],   a: [0.12, 0.24], par: 0.45, k: "glow", sz: 4, sp: 12 },
+        { n: compact ? 24 : 48, r: [1.2, 3.6], a: [0.35, 0.75], par: 1,    k: "glow", sz: 7, sp: 18, tw: 1 }
     ];
     // intro: every orb is born at the center and bursts outward
     const orbs = LAYERS.flatMap(L => Array.from({ length: L.n }, () => ({
@@ -205,15 +206,15 @@
     document.fonts.load("40px Minecraft").then(build, build);
     addEventListener("resize", () => { resize(); build(); });
 
-    const dust = Array.from({ length: 520 }, (_, i) => ({
+    const dust = Array.from({ length: compact ? 220 : 520 }, (_, i) => ({
         i, ang: Math.random() * 6.28, rad: 120 + Math.random() * 320, w: (0.05 + Math.random() * 0.15) * (Math.random() < 0.5 ? -1 : 1),
         r: 1.2 + Math.random() * 1.2, p: Math.random() * 6.28, s: SPR[(Math.random() * 3) | 0]
     }));
 
-    const rain = Array.from({ length: 110 }, () => ({ x: Math.random() * 1.2, y: Math.random(), l: 14 + Math.random() * 26, v: 260 + Math.random() * 260, a: 0.05 + Math.random() * 0.12 }));
+    const rain = Array.from({ length: compact ? 45 : 110 }, () => ({ x: Math.random() * 1.2, y: Math.random(), l: 14 + Math.random() * 26, v: 260 + Math.random() * 260, a: 0.05 + Math.random() * 0.12 }));
 
     const P = { x: 0, y: 0, on: false, nx: 0, ny: 0 };
-    addEventListener("pointermove", e => { P.x = e.clientX; P.y = e.clientY; P.on = true; });
+    if (!compact) addEventListener("pointermove", e => { P.x = e.clientX; P.y = e.clientY; P.on = true; });
     document.addEventListener("pointerleave", () => { P.on = false; });
 
     let lastT = T0, burst = false, fired = false, pulse = false, ringT = 0;

@@ -9,7 +9,10 @@ let targetY = 0;
 let currentX = 0;
 let currentY = 0;
 
+const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
 document.addEventListener("pointermove", (event) => {
+    if (!supportsHover) return;
     const mouseX = event.clientX / window.innerWidth;
     const mouseY = event.clientY / window.innerHeight;
 
@@ -124,10 +127,10 @@ function sparkBurst() {
     cv.style.cssText = "z-index:9;opacity:1";
     document.body.appendChild(cv);
 
-    const dpr = Math.min(2, devicePixelRatio || 1);
+    const dpr = Math.min(supportsHover ? 1.5 : 1.15, devicePixelRatio || 1);
     const W = cv.width = innerWidth * dpr, H = cv.height = innerHeight * dpr;
     const g = cv.getContext("2d"), born = performance.now();
-    const sparks = Array.from({ length: 280 }, () => {
+    const sparks = Array.from({ length: supportsHover ? 220 : 100 }, () => {
         const a = Math.random() * 6.283, v = (200 + Math.random() * 1200) * dpr;
         return { x: W / 2, y: H / 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
                  r: (1 + Math.random() * 3) * dpr, life: 1.8 + Math.random() * 2.6 };
@@ -311,10 +314,12 @@ setInterval(updateCountdown, 1000);
             p: Math.random() * 6.28
         };
     };
-    const bits = Array.from({ length: 120 }, () => make(true));
+    const bits = Array.from({ length: supportsHover ? 90 : 34 }, () => make(true));
     let last = performance.now();
 
-    (function tick(now) {
+    let rafId;
+    function tick(now) {
+        if (document.hidden) { rafId = requestAnimationFrame(tick); return; }
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
         g.clearRect(0, 0, W, H);
@@ -335,6 +340,10 @@ setInterval(updateCountdown, 1000);
             }
             g.beginPath(); g.arc(b.x, b.y, b.r, 0, 6.283); g.fill();
         });
-        requestAnimationFrame(tick);
-    })(last);
+        rafId = requestAnimationFrame(tick);
+    }
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) last = performance.now();
+    });
+    rafId = requestAnimationFrame(tick);
 })();
